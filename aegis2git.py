@@ -407,13 +407,13 @@ class GitImporter:
         
         if master_branch:
             print(f"\nImporting primary branch: {master_branch}")
-            self._import_branch(master_branch, branches[master_branch], aegis_repo)
+            self._import_branch(master_branch, branches[master_branch], aegis_repo, is_primary=True)
         
         # Import other branches
         for branch_name, changes in branches.items():
             if branch_name != master_branch:
                 print(f"\nImporting branch: {branch_name}")
-                self._import_branch(branch_name, changes, aegis_repo)
+                self._import_branch(branch_name, changes, aegis_repo, is_primary=False, primary_branch=master_branch)
         
         print("\n" + "="*60)
         print("Import completed successfully!")
@@ -421,7 +421,8 @@ class GitImporter:
         
         return True
     
-    def _import_branch(self, branch_name: str, changes: List[Dict], aegis_repo: AegisRepository):
+    def _import_branch(self, branch_name: str, changes: List[Dict], aegis_repo: AegisRepository, 
+                       is_primary: bool = False, primary_branch: Optional[str] = None):
         """
         Import a specific branch with its changes.
         
@@ -429,6 +430,8 @@ class GitImporter:
             branch_name: Name of the branch
             changes: List of changes for this branch
             aegis_repo: AegisRepository instance
+            is_primary: Whether this is the primary/master branch
+            primary_branch: Name of the primary branch (for creating feature branches from)
         """
         # Create and checkout branch
         try:
@@ -440,8 +443,14 @@ class GitImporter:
             )
             has_commits = result.returncode == 0
             
-            if has_commits and branch_name != 'master':
-                # Create new branch from master
+            if has_commits and not is_primary:
+                # Create new branch from primary branch
+                if primary_branch:
+                    subprocess.run(
+                        ['git', 'checkout', primary_branch],
+                        cwd=self.git_path,
+                        capture_output=True
+                    )
                 subprocess.run(
                     ['git', 'checkout', '-b', branch_name],
                     cwd=self.git_path,
@@ -450,7 +459,7 @@ class GitImporter:
                 )
             elif not has_commits:
                 # First commit, just use current branch
-                if branch_name != 'master':
+                if not is_primary:
                     # Rename to desired branch
                     subprocess.run(
                         ['git', 'branch', '-M', branch_name],
@@ -458,7 +467,7 @@ class GitImporter:
                         capture_output=True
                     )
             else:
-                # Checkout existing master
+                # Checkout existing branch
                 subprocess.run(
                     ['git', 'checkout', branch_name],
                     cwd=self.git_path,
