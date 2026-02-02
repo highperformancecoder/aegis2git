@@ -1,0 +1,17 @@
+# AEGIS to Git Import Tool - Python Dependencies
+#
+# This script uses only Python standard library modules.
+# No external dependencies are required for basic functionality.
+#
+# However, if you want to run tests or linting, you may want to install:
+#
+# For testing:
+# pytest>=7.0.0
+#
+# For linting:
+# pylint>=2.0.0
+# flake8>=4.0.0
+# black>=22.0.0
+#
+# To install test/dev dependencies:
+# pip install -r requirements-dev.txt
